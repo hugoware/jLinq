@@ -6,7 +6,7 @@
  * License: Attribution-Share Alike
  * http://creativecommons.org/licenses/by-sa/3.0/us/
  */
- 
+
 var jLinq;
 (function() {
 
@@ -280,8 +280,11 @@ var jLinq;
                     }
                 
                     //get the query string
+                    var queryString = ["query = function(record) {" + " return (", _s.query.str.join(""), "); };" ].join("");
+                    
+                    //evaluate the result
                     var query;
-                    eval(["query = function(record) {" + " return (", _s.query.str.join(""), "); };" ].join(""));
+                    eval(queryString);
                 
                     //eval and select each result
                     var selected = []; var remaining = [];
@@ -309,6 +312,17 @@ var jLinq;
                     };                    
                     
                 },
+                getArgs:function(args) {
+                    //start by clearing any null data
+                    var values = []; var found = false;
+                    for (var i = args.length; i-- > 0;) {
+                        if (args[i] == null && !found) { continue; }
+                        found = true;
+                        values.push(args[i]);
+                    }
+                    values.reverse();
+                    return values;
+                },
                 prepCmd:function(params, args) {
                 
                     //prepare this command
@@ -317,14 +331,8 @@ var jLinq;
                     _s.state.paramCount = params.count;
                     _s.state.lastCommandName = params.name;
         
-                    //start by clearing any null data
-                    var values = []; var found = false;
-                    for (var i = args.length; i-- > 0;) {
-                        if (!args[i] && !found) { continue; }
-                        found = true;
-                        values.push(args[i]);
-                    }
-                    values.reverse();
+                    //get the actual values for the query
+                    var values = _s.query.getArgs(args);
         
                     //detetmine if a field was set in this
                     //if the data list count is greater than
@@ -341,13 +349,13 @@ var jLinq;
                     };
                 },
                 repeatCmd:function(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
-                    if (_s.helper.empty([v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25])) { return; }                
-                    _s.state.lastCommand(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);                
+                    if (_s.helper.empty([v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25])) { return _query; }                
+                    return _s.state.lastCommand(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);                
                 },
                 performSort:function(records, field, desc) {
                     records.sort(function(a,b) {
-                        a = a[field];
-                        b = b[field];
+                        a = eval("a." + field);
+                        b = eval("b." + field);
                         return (a < b) ? -1 : (a > b) ? 1 : 0;
                     });
                     if (desc) { records.reverse(); }
@@ -480,7 +488,6 @@ var jLinq;
                     
                     };
                     return doSort(_s.state.data);
-                    
                     
                 },
                 distinct:function(records, field) {
@@ -615,7 +622,6 @@ var jLinq;
                         
                     });
                     
-                    
                     //next, assign a regular version
                     target[params.name] = method;
                     
@@ -625,7 +631,7 @@ var jLinq;
                         (params.generate == null || params.generate)) {
                         
                         //then assign a second "or" version
-                        var altName = params.name.substr(0,1).toUpperCase() + params.name.substr(1, params.name.length - 1);
+                        var altName = params.name.substr(0,1).toUpperCase() + params.name.substr(1, params.name.length - 1);                        
                         
                         //create an automatic OR version
                         target["or"+altName] = function(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
@@ -665,6 +671,38 @@ var jLinq;
                 
             }
         
+            //finally, apply any default operator methods            
+            //flags the query for || - can be used to repeat a command
+            _query["or"] = function(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
+                _s.state.operator = "||";
+                return _s.query.repeatCmd(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);    
+            };
+        
+            //flags the query for ! - can be used to repeat a command    
+            _query["not"] = function(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
+                _s.state.not = !_s.state.not;
+                return _s.query.repeatCmd(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);
+            };
+    
+            //flags the query for && - can be used to repeat a command
+            _query["and"] = function(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
+                _s.state.operator = "&&";
+                return _s.query.repeatCmd(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);
+            };
+        
+            //flags the query for || and ! - can be used to repeat a command
+            _query["orNot"] = function(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
+                _s.state.operator = "||";
+                _s.state.not = !_s.state.not;
+                return _s.query.repeatCmd(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);    
+            };
+        
+            //flags the query for && and ! - can be used to repeat a command
+            _query["andNot"] = function(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
+                _s.state.operator = "||";
+                _s.state.not = !_s.state.not;
+                return _s.query.repeatCmd(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);    
+            };
         };
         
     };
@@ -708,7 +746,7 @@ var jLinq;
                         return query.helper.when(source, {
                             "function":function() { return source(); },
                             array:function() { return source; },
-                            other:function() { return [ source ]; }
+                            other:function() { return [source]; }
                         });
                     }},
                     
@@ -739,43 +777,6 @@ var jLinq;
                         query.state.ignoreCase = false;    
                     }},
                     
-                //flags the query for || - can be used to repeat a command
-                {name:"or", type:"action",
-                    method:function(query, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
-                        query.state.operator = "||";
-                        query.repeat(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);    
-                    }},
-                    
-                //flags the query for ! - can be used to repeat a command    
-                {name:"not", type:"action",
-                    method:function(query, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
-                        query.state.not = !query.state.not;
-                        query.repeat(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);
-                    }},
-                
-                //flags the query for && - can be used to repeat a command
-                {name:"and", type:"action",
-                    method:function(query, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
-                        query.state.operator = "&&";
-                        query.repeat(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);
-                    }},
-                    
-                //flags the query for || and ! - can be used to repeat a command
-                {name:"orNot", type:"action",
-                    method:function(query, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
-                        query.state.or = true;
-                        query.state.not = !query.state.not;
-                        query.repeat(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);    
-                    }},
-                    
-                //flags the query for && and ! - can be used to repeat a command
-                {name:"andNot", type:"action",
-                    method:function(query, v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25) {
-                        query.state.or = false;
-                        query.state.not = !query.state.not;
-                        query.repeat(v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,v13,v14,v15,v16,v17,v18,v19,v20,v21,v22,v23,v24,v25);    
-                    }},
-                    
                 //combines all query selections into an expression with &&    
                 {name:"combine", type:"action",
                     method:function(query, delegate) {
@@ -799,7 +800,7 @@ var jLinq;
                 //Query Methods
                 //=============================================================
                 
-                //runs a delegate as a query, this method is definately cheating
+                //runs a delegate as a query, this method is definitely cheating
                 //since -1 is telling it not to expect a field...
                 {name:"where", count:-1, type:"query",
                     method:function(query, delegate) {
@@ -817,7 +818,7 @@ var jLinq;
                 //checks if two fields are equal or not
                 {name:"equals", count:1, type:"query",
                     method:function(query, value) {
-                        return query.helper.equals(query.value, value);                
+                        return query.helper.equals(query.value, value);
                     }},
                     
                 //returns if a string starts with the phrase
@@ -1101,7 +1102,7 @@ var jLinq;
                                 return (query.value == "");
                             },
                             empty:function() {
-                                return true;
+                                return query.value == null;
                             }
                         });
                     }},
@@ -1372,7 +1373,8 @@ var jLinq;
                     method:function(query, alias, delegate) {                    
                         for(var i = 0; i < query.state.data.length; i++) {
                             query.state.data[i][alias] = delegate(query.state.data[i]);
-                        }                    
+                        }    
+                        return query.query;                    
                     }},
             
                 //skips and takes the correct set of records
