@@ -1,7 +1,6 @@
 /*
- * jLinq 2.2.1 : 9-12-2009
+ * jLinq 2.2.1
  * ---------------------------------
- * Hugo Bonacci (webdev_hb@yahoo.com)
  * www.hugoware.net
  * License: Attribution-Share Alike
  * http://creativecommons.org/licenses/by-sa/3.0/us/

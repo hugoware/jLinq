@@ -1,4 +1,12 @@
-﻿setTimeout(function() {
+﻿/*
+ * jLinq Tests
+ * ---------------------------------
+ * www.hugoware.net
+ * License: Attribution-Share Alike
+ * http://creativecommons.org/licenses/by-sa/3.0/us/
+ */
+ 
+setTimeout(function() {
 (function(tests) {
     var self = this;
     self.index = 0;
