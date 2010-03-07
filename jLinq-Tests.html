@@ -1,0 +1,48 @@
+<html>
+	<head>	
+		<script src="jlinq-custom.js" type="text/javascript" ></script>
+		<script src="jlinq-sample-data.js" type="text/javascript" ></script>
+		<script src="jlinq-test.js" type="text/javascript" ></script>
+		<style type="text/css" >
+			<style type="text/css" >
+        
+            body {
+                font-family : sans-serif;
+            }
+        
+            .result {
+                margin      : 0 0 10px 0;
+                padding     : 10px;
+            }
+            
+            .result-title {
+                font-size   : 13px;
+                font-weight : bold;
+            }
+            
+            .result-errors {
+                font-size   : 10px;
+                padding     : 10px 0 0 0;
+            }
+            
+            .result-error {
+                border      : 1px solid #900;
+                background  : #FEE;
+            }
+            
+            .result-success {
+                border      : 1px solid #090;
+                background  : #EFE;
+            }
+        </style>
+		<script type="text/javascript" >
+			var dbg= function(msg) {
+				document.getElementById("debug").innerHTML += msg + "<br />";
+			};
+		</script>
+	</head>
+	<body>
+		<div id="debug" ></div>
+		<div id="results" ></div>
+	</body>
+</html>
